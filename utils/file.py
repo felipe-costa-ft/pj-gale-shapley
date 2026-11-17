@@ -17,9 +17,11 @@ def remove_parenthesis(text: str):
     return text.replace("(", "").replace(")", "")
 
 
-def create_alunos(alunos: list[str]) -> list[Aluno]:
+def create_alunos(alunos: list[str], projetos_inst: list[Projeto]) -> list[Aluno]:
 
     alunos_instances: list[Aluno] = []
+
+    projetos_by_label = {p.label: p for p in projetos_inst}
 
     for aluno in alunos:
 
@@ -29,6 +31,9 @@ def create_alunos(alunos: list[str]) -> list[Aluno]:
 
         aluno_attr = aluno[1].split(")")
         preferencias = remove_parenthesis(aluno_attr[0]).split(", ")
+        preferencias = [
+            projetos_by_label[p] for p in preferencias if p in projetos_by_label
+        ]
         nota = int(remove_parenthesis(aluno_attr[1]))
 
         alunos_instances.append(Aluno(label, preferencias, nota))
@@ -57,7 +62,8 @@ def create_instances(path: str) -> tuple[list[Aluno], list[Projeto]]:
 
     alunos, projetos = extract_lists(path)
 
-    alunos_instances = create_alunos(alunos)
     projetos_instances = create_projetos(projetos)
+
+    alunos_instances = create_alunos(alunos, projetos_instances)
 
     return alunos_instances, projetos_instances

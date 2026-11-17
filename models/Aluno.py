@@ -1,6 +1,9 @@
+from .Projeto import Projeto
+
+
 class Aluno:
 
-    def __init__(self, label: str, preferencias: list[str], nota: int):
+    def __init__(self, label: str, preferencias: list[Projeto], nota: int):
         self.label = label
         self.preferencias = preferencias
         self.nota = nota
