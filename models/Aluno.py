@@ -15,10 +15,14 @@ class Aluno:
         self.projeto: Projeto | None = None
 
     def __str__(self) -> str:
-        return "{}: {}, ({})".format(self.label, self.preferencias, self.nota)
+        return "{}: Preferencias({}), Nota({})".format(
+            self.label, self.preferencias, self.nota
+        )
 
     def __repr__(self) -> str:
-        return "{}: {}, ({})".format(self.label, self.preferencias, self.nota)
+        return "{}: Preferencias({}), Nota({})".format(
+            self.label, self.preferencias, self.nota
+        )
 
     # verifica se um projeto está na lista de preferências
     def projeto_elegivel(self, projeto: Projeto) -> bool:

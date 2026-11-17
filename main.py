@@ -1,4 +1,6 @@
-from utils.file import extract_lists, create_instances
+from utils.file import create_instances
+
+from gale_shapley import GaleShapley
 
 
 def main():
@@ -7,6 +9,8 @@ def main():
     print(alunos)
 
     print(projetos)
+
+    gale_shapley = GaleShapley(alunos, projetos)
 
 
 if __name__ == "__main__":

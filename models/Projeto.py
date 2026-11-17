@@ -16,10 +16,14 @@ class Projeto:
         self.alunos: list[Aluno] = []
 
     def __str__(self) -> str:
-        return "{}: {}, {}".format(self.label, self.vagas, self.nota_min)
+        return "{}: Vagas({}), Nota Mínima({})".format(
+            self.label, self.vagas, self.nota_min
+        )
 
     def __repr__(self) -> str:
-        return "{}: {}, {}".format(self.label, self.vagas, self.nota_min)
+        return "{}: Vagas({}), Nota Mínima({})".format(
+            self.label, self.vagas, self.nota_min
+        )
 
     def aluno_elegivel(self, aluno: Aluno) -> bool:
         return aluno.nota >= self.nota_min
