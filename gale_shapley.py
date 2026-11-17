@@ -73,10 +73,9 @@ class GaleShapley:
         while projetos_pendentes:
             projeto = projetos_pendentes.pop(0)
 
-            while (
-                len(projeto.alunos) < projeto.vagas
-                and proximo_candidato[projeto] < len(projeto.candidatos)
-            ):
+            while len(projeto.alunos) < projeto.vagas and proximo_candidato[
+                projeto
+            ] < len(projeto.candidatos):
                 aluno = projeto.candidatos[proximo_candidato[projeto]]
                 proximo_candidato[projeto] += 1
 
