@@ -21,6 +21,26 @@ class GaleShapley:
         else:
             projeto.alunos.append(aluno)
 
+    def checa_estabilidade(self) -> list[tuple[str, str]]:
+
+        pares_bloqueadores: list[tuple[str, str]] = []
+
+        for aluno in self.alunos:
+
+            for projeto in aluno.preferencias:
+
+                # Se chegou aqui, os itens proximas iterações são piores
+                if projeto == aluno.projeto:
+                    break
+
+                projeto_prefere = projeto.checa_preferencia_aluno(aluno) is not None
+
+                if projeto_prefere:
+
+                    pares_bloqueadores.append((aluno.label, projeto.label))
+
+        return pares_bloqueadores
+
     def aluno_para_projetos(self) -> list[tuple[str, str]]:
 
         # Cada simulação começa sem as alocações da execução anterior.
@@ -73,9 +93,10 @@ class GaleShapley:
         while projetos_pendentes:
             projeto = projetos_pendentes.pop(0)
 
-            while len(projeto.alunos) < projeto.vagas and proximo_candidato[
-                projeto
-            ] < len(projeto.candidatos):
+            while (
+                projeto.tem_vaga()
+                and proximo_candidato[projeto] < len(projeto.candidatos)
+            ):
                 aluno = projeto.candidatos[proximo_candidato[projeto]]
                 proximo_candidato[projeto] += 1
 

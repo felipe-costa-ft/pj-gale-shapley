@@ -26,6 +26,9 @@ class Projeto:
             self.label, self.vagas, self.nota_min
         )
 
+    def tem_vaga(self) -> bool:
+        return len(self.alunos) < self.vagas
+
     def monta_candidatos(self, alunos: list[Aluno]) -> None:
 
         candidatos: list[Aluno] = []
@@ -45,7 +48,7 @@ class Projeto:
         if aluno.nota < self.nota_min:
             return None
 
-        if len(self.alunos) < self.vagas:
+        if self.tem_vaga():
             return len(self.alunos)
 
         pior = 0

@@ -8,9 +8,18 @@ def main():
 
     gale_shapley = GaleShapley(alunos, projetos)
 
-    print("Aluno para projetos: ", gale_shapley.aluno_para_projetos())
+    print("----------- ALUNO PARA PROJETOS -----------")
 
-    print("Projeto para alunos: ", gale_shapley.projeto_para_alunos())
+    print(gale_shapley.aluno_para_projetos())
+
+    pares_bloqueadores = gale_shapley.checa_estabilidade()
+    print("Estavel? ", len(pares_bloqueadores) == 0)
+
+    print("----------- PROJETO PARA ALUNOS -----------")
+
+    print(gale_shapley.projeto_para_alunos())
+    pares_bloqueadores = gale_shapley.checa_estabilidade()
+    print("Estavel? ", len(pares_bloqueadores) == 0)
 
 
 if __name__ == "__main__":
