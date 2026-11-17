@@ -32,7 +32,10 @@ def create_alunos(alunos: list[str], projetos_inst: list[Projeto]) -> list[Aluno
         aluno_attr = aluno[1].split(")")
         preferencias = remove_parenthesis(aluno_attr[0]).split(", ")
         preferencias = [
-            projetos_by_label[p] for p in preferencias if p in projetos_by_label
+            # Projetos invalidos são descartados nessa etapa
+            projetos_by_label[p]
+            for p in preferencias
+            if p in projetos_by_label
         ]
         nota = int(remove_parenthesis(aluno_attr[1]))
 
