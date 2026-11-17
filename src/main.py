@@ -4,7 +4,7 @@ from gale_shapley import GaleShapley
 
 
 def main():
-    alunos, projetos = create_instances("./data/entradaProj2.26TAG.txt")
+    alunos, projetos = create_instances("../data/entradaProj2.26TAG.txt")
 
     gale_shapley = GaleShapley(alunos, projetos)
 
