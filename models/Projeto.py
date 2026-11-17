@@ -29,8 +29,12 @@ class Projeto:
         return aluno.nota >= self.nota_min
 
     def checa_preferencia_aluno(self, aluno: Aluno) -> int | None:
-        if not self.alunos:
+
+        if aluno.nota < self.nota_min:
             return None
+
+        if len(self.alunos) < self.vagas:
+            return len(self.alunos)
 
         pior = 0
 
