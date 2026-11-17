@@ -14,6 +14,7 @@ class Projeto:
         self.vagas = vagas
         self.nota_min = nota_min
         self.alunos: list[Aluno] = []
+        self.candidatos: list[Aluno] = []
 
     def __str__(self) -> str:
         return "{}: Vagas({}), Nota Mínima({})".format(
@@ -24,6 +25,17 @@ class Projeto:
         return "{}: Vagas({}), Nota Mínima({})".format(
             self.label, self.vagas, self.nota_min
         )
+
+    def monta_candidatos(self, alunos: list[Aluno]) -> None:
+
+        candidatos: list[Aluno] = []
+        for aluno in alunos:
+            if self in aluno.preferencias and aluno.nota >= self.nota_min:
+                candidatos.append(aluno)
+
+        candidatos.sort(key=lambda aluno: aluno.nota, reverse=True)
+
+        self.candidatos = candidatos
 
     def aluno_elegivel(self, aluno: Aluno) -> bool:
         return aluno.nota >= self.nota_min

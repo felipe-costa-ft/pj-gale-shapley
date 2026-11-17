@@ -8,7 +8,9 @@ def main():
 
     gale_shapley = GaleShapley(alunos, projetos)
 
-    print(gale_shapley.aluno_para_projetos())
+    print("Aluno para projetos: ", gale_shapley.aluno_para_projetos())
+
+    print("Projeto para alunos: ", gale_shapley.projeto_para_alunos())
 
 
 if __name__ == "__main__":
