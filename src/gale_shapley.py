@@ -1,10 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.Aluno import Aluno
     from models.Projeto import Projeto
+
+
+@dataclass
+class IteracaoEmparelhamento:
+    numero: int
+    pares: list[tuple[str, str]]
+    caminho: list[tuple[str, str]]
+    tentativas: int = 0
+    rejeitados: int = 0
 
 
 class GaleShapley:
@@ -120,3 +131,111 @@ class GaleShapley:
         return [
             (a.label, a.projeto.label) for a in self.alunos if a.projeto is not None
         ]
+
+    def _caminhos_alternados(
+        self,
+        aluno: Aluno,
+        alunos_visitados: set[Aluno],
+        projetos_visitados: set[Projeto],
+    ) -> Iterator[list[tuple[Aluno, Projeto]]]:
+        """Gera caminhos simples, sem alterar as alocações durante a busca."""
+        for projeto in aluno.preferencias:
+            if projeto in projetos_visitados or not projeto.aluno_elegivel(aluno):
+                continue
+
+            if projeto.tem_vaga():
+                yield [(aluno, projeto)]
+                continue
+
+            # Explora qualquer substituição; a estabilidade é validada ao final.
+            for removido in projeto.alunos:
+                if removido in alunos_visitados:
+                    continue
+
+                for restante in self._caminhos_alternados(
+                    removido,
+                    alunos_visitados | {removido},
+                    projetos_visitados | {projeto},
+                ):
+                    yield [(aluno, projeto)] + restante
+
+    def _tenta_caminho(self, caminho: list[tuple[Aluno, Projeto]]) -> bool:
+        """Aplica o caminho provisoriamente e restaura tudo se houver bloqueios."""
+        alocacoes = {a: a.projeto for a in self.alunos}
+        aceitos = {p: p.alunos.copy() for p in self.projetos}
+        manter = False
+
+        try:
+            # Primeiro abre as vagas, depois cria os novos pares.
+            for aluno, _ in caminho:
+                if aluno.projeto is not None:
+                    aluno.projeto.alunos.remove(aluno)
+                    aluno.projeto = None
+
+            for aluno, projeto in caminho:
+                self.cria_relacao(aluno, len(projeto.alunos), projeto)
+
+            manter = not self.checa_estabilidade()
+            return manter
+        finally:
+            if not manter:
+                for aluno, projeto in alocacoes.items():
+                    aluno.projeto = projeto
+                for projeto, alunos in aceitos.items():
+                    projeto.alunos[:] = alunos
+
+    def tenta_aumento(self) -> tuple[list[tuple[str, str]], int, int]:
+        """Aceita o primeiro aumento estável, em ordem determinística.
+
+        Retorna o caminho aceito, a quantidade de tentativas e as rejeições.
+        A ausência de aumento não comprova que o emparelhamento seja máximo.
+        """
+        if self.checa_estabilidade():
+            raise ValueError("A busca deve começar em um emparelhamento estável.")
+
+        tentativas = 0
+        rejeitados = 0
+        for aluno in self.alunos:
+            if aluno.projeto is not None:
+                continue
+
+            for caminho in self._caminhos_alternados(aluno, {aluno}, set()):
+                tentativas += 1
+                if self._tenta_caminho(caminho):
+                    return (
+                        [(a.label, p.label) for a, p in caminho],
+                        tentativas,
+                        rejeitados,
+                    )
+                rejeitados += 1
+
+        return [], tentativas, rejeitados
+
+    def executar_iteracoes(
+        self, direcao: str = "projetos", total_iteracoes: int = 10
+    ) -> list[IteracaoEmparelhamento]:
+        """Registra a solução inicial e até um aumento em cada rodada seguinte."""
+        if total_iteracoes < 1:
+            raise ValueError("O número de iterações deve ser pelo menos 1.")
+        if direcao == "alunos":
+            pares = self.aluno_para_projetos()
+        elif direcao == "projetos":
+            pares = self.projeto_para_alunos()
+        else:
+            raise ValueError("A direção deve ser 'alunos' ou 'projetos'.")
+
+        historico = [IteracaoEmparelhamento(1, pares, [])]
+        for numero in range(2, total_iteracoes + 1):
+            caminho, tentativas, rejeitados = self.tenta_aumento()
+            pares = [
+                (a.label, a.projeto.label)
+                for a in self.alunos
+                if a.projeto is not None
+            ]
+            historico.append(
+                IteracaoEmparelhamento(
+                    numero, pares, caminho, tentativas, rejeitados
+                )
+            )
+
+        return historico

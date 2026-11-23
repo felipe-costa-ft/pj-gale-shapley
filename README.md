@@ -84,3 +84,41 @@ Retornar os pares aluno–projeto
 Nos empates de nota, a ordenação preserva a ordem original dos candidatos. Um
 projeto que volta à fila retoma as propostas a partir do próximo candidato ainda
 não tentado.
+
+## Caminhos alternados e dez iterações
+
+Cada direção é executada em dez rodadas independentes da outra direção:
+
+- A primeira rodada calcula o emparelhamento inicial com Gale–Shapley.
+- Da segunda à décima, a busca parte dos alunos sem projeto e procura um caminho
+  alternado até um projeto com vaga. Nos projetos cheios, qualquer aluno aceito
+  pode ser realocado, inclusive quando sua nota difere da nota de quem entra.
+- A busca segue a ordem dos alunos, das preferências e dos alunos aceitos, sem
+  sorteios e sem repetir vértices no mesmo caminho.
+- Cada caminho é aplicado provisoriamente. Se criar pares bloqueadores, todas as
+  alocações anteriores são restauradas e a busca continua por outro caminho.
+- Cada rodada aceita no máximo um aumento. Mesmo sem aumento, a rodada é
+  registrada com o emparelhamento e as quantidades de tentativas e rejeições.
+
+O histórico fica disponível no retorno de `executar_iteracoes`. A execução pelo
+`main` mostra os dez resultados de cada direção; a direção dos projetos é exibida
+por último. A validação usa estabilidade fraca: notas iguais não são preferência
+estrita. A busca é uma heurística e não comprova o máximo estável nem garante
+preencher projetos sem candidatos elegíveis. Enumerar caminhos simples pode
+exigir tempo exponencial em instâncias maiores.
+
+Nos dados fornecidos, as duas direções passam de 57 para 60 alunos alocados:
+57 na primeira rodada, 58 na segunda, 59 na terceira e 60 da quarta à décima.
+Os aumentos aceitos preservam a estabilidade fraca.
+
+Para executar, a partir da raiz do repositório:
+
+```bash
+python src/main.py
+```
+
+Para rodar os testes:
+
+```bash
+python -m unittest discover -s tests -v
+```

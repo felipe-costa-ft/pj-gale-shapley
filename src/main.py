@@ -1,25 +1,31 @@
-from utils.file import create_instances
+from pathlib import Path
+
+from utils.parser import create_instances
 
 from gale_shapley import GaleShapley
 
 
 def main():
-    alunos, projetos = create_instances("../data/entradaProj2.26TAG.txt")
+    entrada = Path(__file__).resolve().parent.parent / "data/entradaProj2.26TAG.txt"
+    alunos, projetos = create_instances(str(entrada))
 
     gale_shapley = GaleShapley(alunos, projetos)
 
-    print("----------- ALUNO PARA PROJETOS -----------")
+    for direcao in ("alunos", "projetos"):
+        print(f"----------- PROPOSTAS DOS {direcao.upper()} -----------")
+        historico = gale_shapley.executar_iteracoes(direcao)
 
-    print(gale_shapley.aluno_para_projetos())
+        for rodada in historico:
+            print(
+                f"Iteração {rodada.numero}: {len(rodada.pares)} alocados; "
+                f"{rodada.tentativas} caminhos testados; "
+                f"{rodada.rejeitados} rejeitados por instabilidade."
+            )
+            if rodada.caminho:
+                print("Novos pares do caminho:", rodada.caminho)
+            print("Emparelhamento:", rodada.pares)
 
-    pares_bloqueadores = gale_shapley.checa_estabilidade()
-    print("Estavel? ", len(pares_bloqueadores) == 0)
-
-    print("----------- PROJETO PARA ALUNOS -----------")
-
-    print(gale_shapley.projeto_para_alunos())
-    pares_bloqueadores = gale_shapley.checa_estabilidade()
-    print("Estavel? ", len(pares_bloqueadores) == 0)
+        print("Estável?", not gale_shapley.checa_estabilidade())
 
 
 if __name__ == "__main__":
