@@ -214,7 +214,7 @@ class GaleShapley:
     def executar_iteracoes(
         self, direcao: str = "projetos", total_iteracoes: int = 10
     ) -> list[IteracaoEmparelhamento]:
-        """Registra a solução inicial e até um aumento em cada rodada seguinte."""
+        """Registra o estado inicial (0) e as rodadas de melhoria (1 a N)."""
         if total_iteracoes < 1:
             raise ValueError("O número de iterações deve ser pelo menos 1.")
         if direcao == "alunos":
@@ -224,8 +224,8 @@ class GaleShapley:
         else:
             raise ValueError("A direção deve ser 'alunos' ou 'projetos'.")
 
-        historico = [IteracaoEmparelhamento(1, pares, [])]
-        for numero in range(2, total_iteracoes + 1):
+        historico = [IteracaoEmparelhamento(0, pares, [])]
+        for numero in range(1, total_iteracoes + 1):
             caminho, tentativas, rejeitados = self.tenta_aumento()
             pares = [
                 (a.label, a.projeto.label)

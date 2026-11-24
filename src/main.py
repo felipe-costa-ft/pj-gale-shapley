@@ -16,6 +16,10 @@ def main():
         historico = gale_shapley.executar_iteracoes(direcao)
 
         for rodada in historico:
+            if rodada.numero == 0:
+                print(f"Gale–Shapley inicial: {len(rodada.pares)} alocados.")
+                print("Emparelhamento:", rodada.pares)
+                continue
             print(
                 f"Iteração {rodada.numero}: {len(rodada.pares)} alocados; "
                 f"{rodada.tentativas} caminhos testados; "

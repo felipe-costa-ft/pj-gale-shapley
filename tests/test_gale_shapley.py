@@ -1,6 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
@@ -42,9 +43,12 @@ class TestCaminhosAlternados(unittest.TestCase):
         a1 = Aluno("A1", [p1, p2], 5)
         a2 = Aluno("A2", [p1], 5)
         g = GaleShapley([a1, a2], [p1, p2])
-        historico = g.executar_iteracoes("alunos")
-        self.assertEqual(len(historico), 10)
-        self.assertEqual([len(r.pares) for r in historico], [1] + [2] * 9)
+        with patch.object(g, "tenta_aumento", wraps=g.tenta_aumento) as busca:
+            historico = g.executar_iteracoes("alunos")
+        self.assertEqual(busca.call_count, 10)
+        self.assertEqual(len(historico), 11)
+        self.assertEqual([r.numero for r in historico], list(range(11)))
+        self.assertEqual([len(r.pares) for r in historico], [1] + [2] * 10)
         self.assertEqual(historico[0].pares, [("A1", "P1")])
         self.assertEqual(historico[1].caminho, [("A2", "P1"), ("A1", "P2")])
         self.assertIs(a1.projeto, p2)
@@ -145,7 +149,11 @@ class TestCaminhosAlternados(unittest.TestCase):
 
     def test_entrada_vazia_e_argumentos_invalidos(self):
         g = GaleShapley([], [])
-        self.assertEqual(len(g.executar_iteracoes()), 10)
+        self.assertEqual(len(g.executar_iteracoes()), 11)
+        with patch.object(g, "tenta_aumento", wraps=g.tenta_aumento) as busca:
+            historico = g.executar_iteracoes(total_iteracoes=1)
+        self.assertEqual(busca.call_count, 1)
+        self.assertEqual([r.numero for r in historico], [0, 1])
         with self.assertRaises(ValueError):
             g.executar_iteracoes(total_iteracoes=0)
         with self.assertRaises(ValueError):
@@ -162,7 +170,7 @@ class TestCaminhosAlternados(unittest.TestCase):
         g = GaleShapley(alunos, projetos)
         for direcao in ("alunos", "projetos"):
             historico = g.executar_iteracoes(direcao)
-            self.assertEqual([r.numero for r in historico], list(range(1, 11)))
+            self.assertEqual([r.numero for r in historico], list(range(11)))
             self.assertEqual(len(historico[0].pares), 57)
             self.assertEqual(len(historico[-1].pares), 60)
             for anterior, atual in zip(historico, historico[1:]):

@@ -87,10 +87,12 @@ não tentado.
 
 ## Caminhos alternados e dez iterações
 
-Cada direção é executada em dez rodadas independentes da outra direção:
+Cada direção tem uma inicialização e dez rodadas de melhoria, independentes da
+outra direção:
 
-- A primeira rodada calcula o emparelhamento inicial com Gale–Shapley.
-- Da segunda à décima, a busca parte dos alunos sem projeto e procura um caminho
+- Gale–Shapley calcula o emparelhamento inicial, fora das dez iterações. Esse
+  estado é registrado no histórico com o número 0.
+- Da primeira à décima rodada, a busca parte dos alunos sem projeto e procura um caminho
   alternado até um projeto com vaga. Nos projetos cheios, qualquer aluno aceito
   pode ser realocado, inclusive quando sua nota difere da nota de quem entra.
 - A busca segue a ordem dos alunos, das preferências e dos alunos aceitos, sem
@@ -101,14 +103,14 @@ Cada direção é executada em dez rodadas independentes da outra direção:
   registrada com o emparelhamento e as quantidades de tentativas e rejeições.
 
 O histórico fica disponível no retorno de `executar_iteracoes`. A execução pelo
-`main` mostra os dez resultados de cada direção; a direção dos projetos é exibida
+`main` mostra o estado inicial e os dez resultados de cada direção; a direção dos projetos é exibida
 por último. A validação usa estabilidade fraca: notas iguais não são preferência
 estrita. A busca é uma heurística e não comprova o máximo estável nem garante
 preencher projetos sem candidatos elegíveis. Enumerar caminhos simples pode
 exigir tempo exponencial em instâncias maiores.
 
 Nos dados fornecidos, as duas direções passam de 57 para 60 alunos alocados:
-57 na primeira rodada, 58 na segunda, 59 na terceira e 60 da quarta à décima.
+57 no estado inicial, 58 na primeira rodada, 59 na segunda e 60 da terceira à décima.
 Os aumentos aceitos preservam a estabilidade fraca.
 
 Para executar, a partir da raiz do repositório:
