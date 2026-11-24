@@ -1,84 +1,69 @@
-"""Visualização dos eventos reais e dos estados finais de cada rodada."""
+"""Gráficos de Matplotlib para exibir diretamente no notebook."""
 
-import json
-from collections import Counter
-from dataclasses import asdict
-from pathlib import Path
-
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import networkx as nx
-from matplotlib.backends.backend_pdf import PdfPages
 
-from gale_shapley import IteracaoEmparelhamento
+from gale_shapley import TentativaEmparelhamento
 from models.Aluno import Aluno
 from models.Projeto import Projeto
 
 
-def cria_grafo(alunos: list[Aluno], projetos: list[Projeto]) -> nx.Graph:
+def desenhar_grafo(
+    ax, alunos: list[Aluno], projetos: list[Projeto], pares: list[tuple[str, str]],
+    titulo: str, propostas=(), rejeicoes=(), foco=None,
+) -> None:
     grafo = nx.Graph()
-    grafo.add_nodes_from((a.label, {"bipartite": 0, "nota": a.nota}) for a in alunos)
-    grafo.add_nodes_from((p.label, {"bipartite": 1, "vagas": p.vagas}) for p in projetos)
+    grafo.add_nodes_from(a.label for a in alunos)
+    grafo.add_nodes_from(p.label for p in projetos)
     grafo.add_edges_from(
-        (a.label, p.label)
-        for a in alunos for p in a.preferencias if p.aluno_elegivel(a)
+        (a.label, p.label) for a in alunos for p in a.preferencias
+        if p.aluno_elegivel(a)
     )
-    return grafo
+    if foco is not None:
+        grafo = grafo.subgraph(foco)
+    esquerda = [a.label for a in alunos if a.label in grafo]
+    if grafo:
+        pos = nx.bipartite_layout(grafo, esquerda)
+        nx.draw_networkx_edges(grafo, pos, ax=ax, edge_color="#cbd5e1", alpha=0.3, width=0.5)
+        for arestas, cor, estilo in (
+            (pares, "#16834b", "solid"),
+            (propostas, "#2563eb", "solid"),
+            (rejeicoes, "#dc2626", "dashed"),
+        ):
+            visiveis = [(a, p) for a, p in arestas if a in grafo and p in grafo]
+            nx.draw_networkx_edges(grafo, pos, ax=ax, edgelist=visiveis, edge_color=cor, width=1.5, style=estilo)
+        cores = ["#526b83" if n in esquerda else "#e0a23b" for n in grafo]
+        nx.draw_networkx_nodes(grafo, pos, ax=ax, node_size=60 if foco else 12, node_color=cores)
+        # No grafo completo, os IDs dos alunos ficam na tabela para evitar sobreposição.
+        rotulos = {n: n for n in grafo if foco is not None or n not in esquerda}
+        nx.draw_networkx_labels(grafo, pos, ax=ax, labels=rotulos, font_size=9 if foco else 6)
+        ax.margins(0.15)
+    ax.set_title(titulo)
+    ax.axis("off")
 
 
-def _posicoes(alunos: list[Aluno], projetos: list[Projeto]) -> dict:
-    pos = {}
-    for grupo, x in ((alunos, 0), (projetos, 1)):
-        for i, vertice in enumerate(grupo):
-            pos[vertice.label] = (x, 1 - (i + 0.5) / max(len(grupo), 1))
-    return pos
-
-
-def salvar_visualizacao(
-    alunos: list[Aluno], projetos: list[Projeto],
-    historico: list[IteracaoEmparelhamento], direcao: str, pasta: Path,
-) -> Path:
-    pasta.mkdir(parents=True, exist_ok=True)
-    grafo = cria_grafo(alunos, projetos)
-    pos = _posicoes(alunos, projetos)
-    dados = {
-        "direcao": direcao,
-        "alunos": [{"id": a.label, "nota": a.nota} for a in alunos],
-        "projetos": [{"id": p.label, "vagas": p.vagas} for p in projetos],
-        "arestas": list(grafo.edges),
-        "historico": [asdict(rodada) for rodada in historico],
-    }
-    # Impede que um identificador da entrada encerre a tag script do documento.
-    serializado = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
-    modelo = Path(__file__).with_name("templates") / "visualizacao.html"
-    pagina = modelo.read_text(encoding="utf-8").replace("__DADOS__", serializado)
-    destino = pasta / f"visualizacao_{direcao}.html"
-    destino.write_text(pagina, encoding="utf-8")
-
-    # PDF com todos os estados estáveis; PNG final para notebook e relatório.
-    with PdfPages(pasta / f"rodadas_{direcao}.pdf") as pdf:
-        for rodada in historico:
-            fig, ax = plt.subplots(figsize=(10, 18))
-            nx.draw_networkx_edges(grafo, pos, ax=ax, edge_color="#cbd5e1", width=0.4, alpha=0.3)
-            nx.draw_networkx_edges(grafo, pos, ax=ax, edgelist=rodada.pares, edge_color="#16834b", width=1.2)
-            nx.draw_networkx_nodes(grafo, pos, ax=ax, nodelist=[a.label for a in alunos], node_color="#2563eb", node_size=8)
-            nx.draw_networkx_nodes(grafo, pos, ax=ax, nodelist=[p.label for p in projetos], node_color="#e09316", node_size=20, node_shape="s")
-            ocupacao = Counter(p for _, p in rodada.pares)
-            for a in alunos:
-                x, y = pos[a.label]
-                ax.text(x - 0.02, y, a.label, ha="right", va="center", fontsize=5)
-            for p in projetos:
-                x, y = pos[p.label]
-                ax.text(x + 0.02, y, f"{p.label} ({ocupacao[p.label]}/{p.vagas})", va="center", fontsize=7)
-            titulo = "Gale–Shapley inicial" if rodada.numero == 0 else f"Iteração {rodada.numero}"
-            ax.set_title(f"Propostas dos {direcao} — {titulo}\n{len(rodada.pares)} alunos alocados", pad=20)
-            ax.set_xlim(-0.15, 1.25)
-            ax.set_ylim(-0.02, 1.02)
-            ax.axis("off")
-            fig.text(0.5, 0.025, "Verde: emparelhamento ao fim da rodada • Cinza: relações elegíveis\nPropostas, simulações e rejeições: consulte a visualização HTML.", ha="center", fontsize=9)
-            pdf.savefig(fig, bbox_inches="tight")
-            if rodada is historico[-1]:
-                fig.savefig(pasta / f"grafo_final_{direcao}.png", dpi=160, bbox_inches="tight")
-            plt.close(fig)
-    return destino
+def desenhar_tentativa(
+    alunos: list[Aluno], projetos: list[Projeto], tentativa: TentativaEmparelhamento
+):
+    """Mostra um recorte do caminho: proposta, simulação e decisão real."""
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    foco = {v for par in tentativa.propostas for v in par}
+    rejeitada = bool(tentativa.bloqueadores)
+    desenhar_grafo(axes[0], alunos, projetos, tentativa.antes,
+                  "1. Proposta ativa", propostas=tentativa.propostas, foco=foco)
+    desenhar_grafo(axes[1], alunos, projetos, tentativa.temporarios,
+                  "2. Emparelhamento temporário", foco=foco)
+    desenhar_grafo(
+        axes[2], alunos, projetos,
+        tentativa.antes if rejeitada else tentativa.temporarios,
+        "3. Rejeição e restauração" if rejeitada else "3. Aumento estável aceito",
+        rejeicoes=tentativa.propostas if rejeitada else (), foco=foco,
+    )
+    fig.legend(handles=[
+        Line2D([], [], color="#2563eb", label="Proposta ativa"),
+        Line2D([], [], color="#16834b", label="Emparelhamento temporário / aceito"),
+        Line2D([], [], color="#dc2626", linestyle="--", label="Rejeição"),
+    ], loc="lower center", ncol=3)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    return fig

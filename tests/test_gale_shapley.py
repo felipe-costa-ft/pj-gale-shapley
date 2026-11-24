@@ -179,18 +179,12 @@ class TestCaminhosAlternados(unittest.TestCase):
                 )
             for rodada in historico:
                 self.verifica_solucao(g, rodada.pares)
-            # Os deltas dos eventos devem reproduzir exatamente cada rodada,
-            # incluindo a restauração após todos os caminhos rejeitados.
-            reconstruidos = set()
             for rodada in historico:
-                for evento in rodada.eventos:
-                    reconstruidos.difference_update(evento.removidas)
-                    reconstruidos.update(evento.adicionadas)
-                self.assertEqual(reconstruidos, set(rodada.pares))
-            self.assertTrue(any(
-                evento.tipo == "rejeicao"
-                for rodada in historico for evento in rodada.eventos
-            ))
+                self.assertLessEqual(len(rodada.exemplos), 2)
+                for exemplo in rodada.exemplos:
+                    self.assertEqual(len(exemplo.temporarios), len(exemplo.antes) + 1)
+                    if not exemplo.bloqueadores:
+                        self.assertEqual(set(exemplo.temporarios), set(rodada.pares))
             for p in projetos:
                 self.assertTrue(all(a.projeto is p for a in p.alunos))
             for a in alunos:

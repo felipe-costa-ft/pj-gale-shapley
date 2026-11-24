@@ -1,45 +1,27 @@
 from pathlib import Path
 
-from utils.parser import create_instances
-
 from gale_shapley import GaleShapley
-from resultados import salvar_resultados
-from visualizacao import salvar_visualizacao
+from resultados import indices_preferencia, tabela_final
+from utils.parser import create_instances
 
 
 def main():
     entrada = Path(__file__).resolve().parent.parent / "data/entradaProj2.26TAG.txt"
-    alunos, projetos = create_instances(str(entrada))
-
-    gale_shapley = GaleShapley(alunos, projetos)
-
     for direcao in ("alunos", "projetos"):
-        print(f"----------- PROPOSTAS DOS {direcao.upper()} -----------")
-        historico = gale_shapley.executar_iteracoes(direcao)
-
+        alunos, projetos = create_instances(str(entrada))
+        algoritmo = GaleShapley(alunos, projetos)
+        historico = algoritmo.executar_iteracoes(direcao)
+        print(f"\nPROPOSTAS DOS {direcao.upper()}")
         for rodada in historico:
-            if rodada.numero == 0:
-                print(f"Gale–Shapley inicial: {len(rodada.pares)} alocados.")
-                print("Emparelhamento:", rodada.pares)
-                continue
-            print(
-                f"Iteração {rodada.numero}: {len(rodada.pares)} alocados; "
-                f"{rodada.tentativas} caminhos testados; "
-                f"{rodada.rejeitados} rejeitados por instabilidade."
-            )
-            if rodada.caminho:
-                print("Novos pares do caminho:", rodada.caminho)
-            print("Emparelhamento:", rodada.pares)
-
-        print("Estável?", not gale_shapley.checa_estabilidade())
-        destino = salvar_resultados(
-            alunos, projetos, direcao, entrada.parent.parent / "resultados"
-        )
-        print("Índices e tabela final:", destino)
-        visualizacao = salvar_visualizacao(
-            alunos, projetos, historico, direcao, entrada.parent.parent / "resultados"
-        )
-        print("Visualização dos eventos:", visualizacao)
+            nome = "Gale–Shapley inicial" if rodada.numero == 0 else f"Iteração {rodada.numero}"
+            print(f"{nome}: {len(rodada.pares)} alocados; {rodada.tentativas} caminhos; {rodada.rejeitados} rejeitados")
+        print("Estável?", not algoritmo.checa_estabilidade())
+        print("\nÍndices de preferência:")
+        for linha in indices_preferencia(alunos, projetos):
+            print(linha)
+        print("\nTabela final:")
+        for linha in tabela_final(alunos):
+            print(linha)
 
 
 if __name__ == "__main__":
