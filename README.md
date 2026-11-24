@@ -126,8 +126,9 @@ da raiz do repositório:
 jupyter lab Projeto2_Grafos.ipynb
 ```
 
-No Colab, envie o notebook e `entradaProj2.26TAG.txt` pelo painel Arquivos.
-O código está nas células; o arquivo de entrada é lido separadamente.
+No Colab, abra o notebook e execute as células em ordem. Quando a entrada não
+estiver disponível localmente, ela será baixada automaticamente da branch `main`
+do GitHub. Não é necessário enviar o arquivo pelo painel Arquivos.
 Antes de entregar, preencha os nomes e as matrículas na primeira célula.
 
 Para executar pelos módulos Python e imprimir os resultados no terminal:
