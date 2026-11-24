@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.Aluno import Aluno
     from models.Projeto import Projeto
+
+
+@dataclass
+class EventoEmparelhamento:
+    tipo: str
+    arestas: list[tuple[str, str]]
+    adicionadas: list[tuple[str, str]]
+    removidas: list[tuple[str, str]]
+    motivo: str = ""
 
 
 @dataclass
@@ -16,6 +25,7 @@ class IteracaoEmparelhamento:
     caminho: list[tuple[str, str]]
     tentativas: int = 0
     rejeitados: int = 0
+    eventos: list[EventoEmparelhamento] = field(default_factory=list)
 
 
 class GaleShapley:
@@ -23,6 +33,24 @@ class GaleShapley:
     def __init__(self, alunos: list[Aluno], projetos: list[Projeto]):
         self.alunos = alunos
         self.projetos = projetos
+        self.eventos: list[EventoEmparelhamento] = []
+        self._pares_evento: set[tuple[str, str]] = set()
+
+    def _registra_evento(
+        self, tipo: str, arestas: list[tuple[str, str]], motivo: str = ""
+    ) -> None:
+        # Diferenças entre estados evitam copiar a alocação inteira por evento.
+        atuais = {
+            (a.label, a.projeto.label)
+            for a in self.alunos if a.projeto is not None
+        }
+        self.eventos.append(
+            EventoEmparelhamento(
+                tipo, arestas.copy(), sorted(atuais - self._pares_evento),
+                sorted(self._pares_evento - atuais), motivo,
+            )
+        )
+        self._pares_evento = atuais
 
     def cria_relacao(self, aluno: Aluno, aluno_index: int, projeto: Projeto):
         aluno.projeto = projeto
@@ -61,6 +89,9 @@ class GaleShapley:
         for projeto in self.projetos:
             projeto.alunos.clear()
 
+        self.eventos = []
+        self._pares_evento = set()
+
         alunos_pendentes: list[Aluno] = self.alunos.copy()
         proxima_preferencia: dict[Aluno, int] = {a: 0 for a in self.alunos}
 
@@ -70,6 +101,8 @@ class GaleShapley:
             while proxima_preferencia[aluno] < len(aluno.preferencias):
                 projeto = aluno.preferencias[proxima_preferencia[aluno]]
                 proxima_preferencia[aluno] += 1
+                aresta = [(aluno.label, projeto.label)]
+                self._registra_evento("proposta", aresta, "Aluno propõe ao projeto.")
                 elegivel = aluno.projeto_elegivel(projeto)
                 aluno_index = projeto.checa_preferencia_aluno(aluno)
 
@@ -79,9 +112,17 @@ class GaleShapley:
                         removido = projeto.alunos[aluno_index]
                         removido.projeto = None
                         alunos_pendentes.append(removido)
+                        self._registra_evento(
+                            "rejeicao", [(removido.label, projeto.label)],
+                            "Substituído por candidato com nota maior.",
+                        )
 
                     self.cria_relacao(aluno, aluno_index, projeto)
+                    self._registra_evento("temporario", aresta, "Proposta aceita provisoriamente.")
                     break
+                self._registra_evento(
+                    "rejeicao", aresta, "Nota insuficiente ou projeto mantém os aceitos."
+                )
 
         return [
             (a.label, a.projeto.label) for a in self.alunos if a.projeto is not None
@@ -92,6 +133,9 @@ class GaleShapley:
         # Cada simulação começa sem as alocações da execução anterior.
         for aluno in self.alunos:
             aluno.projeto = None
+
+        self.eventos = []
+        self._pares_evento = set()
 
         projetos_pendentes = self.projetos.copy()
         proximo_candidato: dict[Projeto, int] = {}
@@ -110,8 +154,13 @@ class GaleShapley:
             ):
                 aluno = projeto.candidatos[proximo_candidato[projeto]]
                 proximo_candidato[projeto] += 1
+                aresta = [(aluno.label, projeto.label)]
+                self._registra_evento("proposta", aresta, "Projeto propõe ao aluno.")
 
                 if not aluno.checa_preferencia_projeto(projeto):
+                    self._registra_evento(
+                        "rejeicao", aresta, "Aluno prefere a alocação atual."
+                    )
                     continue
 
                 projeto_anterior = aluno.projeto
@@ -127,6 +176,12 @@ class GaleShapley:
                         projetos_pendentes.append(projeto_anterior)
 
                 self.cria_relacao(aluno, len(projeto.alunos), projeto)
+                if projeto_anterior is not None:
+                    self._registra_evento(
+                        "rejeicao", [(aluno.label, projeto_anterior.label)],
+                        "Aluno trocou por um projeto de maior preferência.",
+                    )
+                self._registra_evento("temporario", aresta, "Oferta aceita provisoriamente.")
 
         return [
             (a.label, a.projeto.label) for a in self.alunos if a.projeto is not None
@@ -164,6 +219,9 @@ class GaleShapley:
         alocacoes = {a: a.projeto for a in self.alunos}
         aceitos = {p: p.alunos.copy() for p in self.projetos}
         manter = False
+        arestas = [(a.label, p.label) for a, p in caminho]
+        self._registra_evento("proposta", arestas, "Caminho aumentante proposto.")
+        bloqueadores: list[tuple[str, str]] = []
 
         try:
             # Primeiro abre as vagas, depois cria os novos pares.
@@ -175,7 +233,13 @@ class GaleShapley:
             for aluno, projeto in caminho:
                 self.cria_relacao(aluno, len(projeto.alunos), projeto)
 
-            manter = not self.checa_estabilidade()
+            self._registra_evento(
+                "temporario", arestas, "Simulação do caminho; estabilidade ainda não validada."
+            )
+            bloqueadores = self.checa_estabilidade()
+            manter = not bloqueadores
+            if manter:
+                self._registra_evento("aceito", arestas, "Aumento estável confirmado.")
             return manter
         finally:
             if not manter:
@@ -183,6 +247,10 @@ class GaleShapley:
                     aluno.projeto = projeto
                 for projeto, alunos in aceitos.items():
                     projeto.alunos[:] = alunos
+                self._registra_evento(
+                    "rejeicao", arestas,
+                    "Caminho desfeito. Pares bloqueadores: " + str(bloqueadores),
+                )
 
     def tenta_aumento(self) -> tuple[list[tuple[str, str]], int, int]:
         """Aceita o primeiro aumento estável, em ordem determinística.
@@ -224,9 +292,13 @@ class GaleShapley:
         else:
             raise ValueError("A direção deve ser 'alunos' ou 'projetos'.")
 
-        historico = [IteracaoEmparelhamento(0, pares, [])]
+        historico = [IteracaoEmparelhamento(0, pares, [], eventos=self.eventos.copy())]
         for numero in range(1, total_iteracoes + 1):
+            self.eventos = []
             caminho, tentativas, rejeitados = self.tenta_aumento()
+            self._registra_evento(
+                "fim", [], "Fim da rodada com aumento." if caminho else "Fim da rodada sem aumento."
+            )
             pares = [
                 (a.label, a.projeto.label)
                 for a in self.alunos
@@ -234,7 +306,7 @@ class GaleShapley:
             ]
             historico.append(
                 IteracaoEmparelhamento(
-                    numero, pares, caminho, tentativas, rejeitados
+                    numero, pares, caminho, tentativas, rejeitados, self.eventos.copy()
                 )
             )
 

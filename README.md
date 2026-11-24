@@ -147,3 +147,36 @@ Notas iguais recebem a mesma classificação, sem criar uma preferência estrita
 artificial: por exemplo, notas 5, 4, 4, 3 correspondem às posições 1, 2, 2, 4.
 Para não alocados, os campos da alocação ficam vazios no CSV e com traços no HTML.
 As ordens de escolha consideram apenas projetos válidos, após a limpeza da entrada.
+
+## Visualização das rodadas e dos eventos
+
+Com o ambiente virtual ativado e as dependências instaladas, execute:
+
+```bash
+python src/main.py
+open resultados/visualizacao_projetos.html
+```
+
+`visualizacao_alunos.html` mostra a outra direção. As páginas funcionam localmente,
+sem servidor ou conexão com a internet. Selecione o Gale–Shapley inicial ou uma das
+dez rodadas, depois use os botões ou o controle de eventos para percorrer a execução.
+O botão Reproduzir anima os eventos da rodada selecionada. A opção de mostrar todas
+as relações elegíveis também exibe as arestas que não estão no emparelhamento.
+
+As cores das arestas são:
+
+- Azul: proposta ativa de um aluno, projeto ou caminho aumentante.
+- Verde: emparelhamento temporário ou aumento aceito.
+- Vermelho tracejado: proposta rejeitada, relação desfeita ou caminho rejeitado.
+- Cinza: relação elegível que serve de contexto.
+
+Os eventos são registrados durante o algoritmo, inclusive as simulações de caminhos
+que são rejeitados por instabilidade. O estado temporário de uma simulação ainda
+não foi validado; na rejeição, a alocação anterior é restaurada. O motivo da rejeição
+é exibido junto ao grafo. Os eventos guardam apenas mudanças nas arestas, e o
+histórico de cada rodada permite reconstruir os estados intermediários.
+
+Também são gerados `rodadas_alunos.pdf` e `rodadas_projetos.pdf`, cada um com 11
+páginas (inicialização e dez rodadas), e `grafo_final_alunos.png` e
+`grafo_final_projetos.png`. Esses arquivos estáticos mostram os emparelhamentos ao
+fim das rodadas; os três estados das propostas podem ser inspecionados no HTML.

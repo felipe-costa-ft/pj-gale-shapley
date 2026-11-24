@@ -134,6 +134,7 @@ th, td {{border: 1px solid #cbd5e1; padding: 8px; text-align: left}}
 th {{background: #e6eef4}} tbody tr:nth-child(even) {{background: #f5f8fa}}
 </style>
 <h1>Propostas dos {direcao}{proposta}</h1>
+<p><a href="visualizacao_{direcao}.html">Ver grafo e evolução das dez iterações</a></p>
 <p>{alocados} alunos alocados; {len(alunos) - alocados} não alocados;
 {sum(bool(p.alunos) for p in projetos)} projetos ocupados.</p>
 <h2>Índice de preferência por projeto</h2>

@@ -4,6 +4,7 @@ from utils.parser import create_instances
 
 from gale_shapley import GaleShapley
 from resultados import salvar_resultados
+from visualizacao import salvar_visualizacao
 
 
 def main():
@@ -35,6 +36,10 @@ def main():
             alunos, projetos, direcao, entrada.parent.parent / "resultados"
         )
         print("Índices e tabela final:", destino)
+        visualizacao = salvar_visualizacao(
+            alunos, projetos, historico, direcao, entrada.parent.parent / "resultados"
+        )
+        print("Visualização dos eventos:", visualizacao)
 
 
 if __name__ == "__main__":
