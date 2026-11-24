@@ -3,6 +3,7 @@ from pathlib import Path
 from utils.parser import create_instances
 
 from gale_shapley import GaleShapley
+from resultados import salvar_resultados
 
 
 def main():
@@ -30,6 +31,10 @@ def main():
             print("Emparelhamento:", rodada.pares)
 
         print("Estável?", not gale_shapley.checa_estabilidade())
+        destino = salvar_resultados(
+            alunos, projetos, direcao, entrada.parent.parent / "resultados"
+        )
+        print("Índices e tabela final:", destino)
 
 
 if __name__ == "__main__":

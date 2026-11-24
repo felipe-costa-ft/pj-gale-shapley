@@ -124,3 +124,26 @@ Para rodar os testes:
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+## Índice de preferência e tabela final
+
+Ao executar `python src/main.py`, a pasta `resultados/` recebe tabelas HTML e CSV
+das duas direções. `resultados_projetos.html` identifica a proposta final;
+`resultados_alunos.html` permite a comparação.
+
+O índice de preferência mede a procura por cada projeto:
+
+```text
+Índice = 3 × primeiras escolhas + 2 × segundas escolhas + terceiras escolhas
+```
+
+Essa fórmula é uma convenção do projeto, pois o enunciado não a especifica.
+Todos os interessados são contados, inclusive os que não atingem a nota mínima.
+As tabelas mostram separadamente os candidatos elegíveis, as vagas e a ocupação.
+
+A matriz final inclui todos os alunos, com projeto alocado, nota, ordem de escolha
+do projeto e classificação do aluno entre os candidatos elegíveis do projeto.
+Notas iguais recebem a mesma classificação, sem criar uma preferência estrita
+artificial: por exemplo, notas 5, 4, 4, 3 correspondem às posições 1, 2, 2, 4.
+Para não alocados, os campos da alocação ficam vazios no CSV e com traços no HTML.
+As ordens de escolha consideram apenas projetos válidos, após a limpeza da entrada.
