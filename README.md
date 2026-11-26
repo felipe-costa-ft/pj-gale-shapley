@@ -145,6 +145,19 @@ python -m unittest discover -s tests -v
 
 A entrega reúne o notebook com suas saídas e o mini-relatório pedido no enunciado.
 
+## Comparação sem exigir estabilidade
+
+A última seção do notebook realiza dez novas iterações com caminhos aumentantes
+a partir de cada solução estável: alunos propondo e projetos propondo. Cada
+trajetória parte de seus 60 pares e usa objetos separados. Pares bloqueadores são
+contados, mas não impedem as trocas. As notas mínimas, as escolhas dos alunos e as
+capacidades continuam sendo respeitadas.
+
+As duas trajetórias chegam a 63 alunos na terceira rodada. A origem dos alunos
+termina com cinco pares bloqueadores; a dos projetos, com seis. Há 59 pares finais
+em comum. A seção mostra os gráficos de cada rodada e as duas matrizes finais.
+Essa comparação não substitui a proposta estável apresentada anteriormente.
+
 ## Problemas encontrados na entrada
 
 P11, P13, P19, P32, P33, P42 e P46 não têm nenhum aluno que os tenha escolhido e

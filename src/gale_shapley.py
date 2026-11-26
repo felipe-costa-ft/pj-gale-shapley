@@ -25,6 +25,7 @@ class IteracaoEmparelhamento:
     tentativas: int = 0
     rejeitados: int = 0
     exemplos: list[TentativaEmparelhamento] = field(default_factory=list)
+    bloqueadores: list[tuple[str, str]] = field(default_factory=list)
 
 
 class GaleShapley:
