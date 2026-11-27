@@ -45,19 +45,41 @@ def indices_preferencia(alunos: list[Aluno], projetos: list[Projeto]) -> list[di
     return linhas
 
 
-def mostrar_tabela(linhas: list[dict]) -> None:
+def mostrar_tabela(linhas: list[dict], titulo: str = "") -> None:
     """Exibe uma tabela estática na própria célula do notebook."""
     from IPython.display import HTML, display
 
     if not linhas:
-        print("Tabela vazia.")
-        return
-    cabecalho = "".join(f"<th>{escape(c)}</th>" for c in linhas[0])
-    corpo = "".join(
-        "<tr>" + "".join(
-            f"<td>{escape(str(v)) if v is not None else '—'}</td>"
-            for v in linha.values()
-        ) + "</tr>"
-        for linha in linhas
+        linhas = [{"Resultado": "Nenhum registro."}]
+    colunas = list(linhas[0])
+    cabecalho = "".join(
+        '<th scope="col" style="padding:9px;text-align:left;'
+        f'color:#172b3a!important;background:#e2eaf2!important">{escape(c)}</th>'
+        for c in colunas
     )
-    display(HTML(f"<table><thead><tr>{cabecalho}</tr></thead><tbody>{corpo}</tbody></table>"))
+    corpo = []
+    for i, linha in enumerate(linhas):
+        fundo = "#f4f7fa" if i % 2 else "#ffffff"
+        celulas = []
+        for coluna in colunas:
+            valor = linha.get(coluna)
+            if isinstance(valor, bool):
+                valor = "Sim" if valor else "Não"
+            texto = escape(str(valor)) if valor is not None else "—"
+            alinhamento = "right" if isinstance(valor, (int, float)) else "left"
+            celulas.append(
+                f'<td style="padding:7px 9px;border-bottom:1px solid #dce3ea;'
+                f'text-align:{alinhamento};color:#172b3a!important;'
+                f'background:{fundo}!important">{texto}</td>'
+            )
+        corpo.append(f'<tr style="background:{fundo}">{"".join(celulas)}</tr>')
+    legenda = (
+        '<caption style="text-align:left;font-weight:600;padding:10px 9px;'
+        'color:#172b3a!important;background:#e2eaf2!important">'
+        f'{escape(titulo)}</caption>' if titulo else ""
+    )
+    display(HTML(
+        '<table style="border-collapse:collapse;margin:12px 0;font-size:14px">'
+        f'{legenda}<thead style="background:#e2eaf2"><tr>{cabecalho}</tr></thead>'
+        f'<tbody>{"".join(corpo)}</tbody></table>'
+    ))
